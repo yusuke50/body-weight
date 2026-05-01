@@ -7,7 +7,7 @@ export function Navigation({ currentView, onViewChange }: NavigationProps) {
   const navItems = [
     { id: 'dashboard' as const, label: '儀表板', icon: '📊' },
     { id: 'charts' as const, label: '圖表', icon: '📈' },
-    { id: 'data' as const, label: '數據管理', icon: '📝' },
+    { id: 'data' as const, label: '資料管理', icon: '📝' },
     { id: 'settings' as const, label: '設定', icon: '⚙️' },
   ];
 

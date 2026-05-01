@@ -1,71 +1,70 @@
 import type { BodyRecord, DerivedMetrics } from '../types';
 
 /**
- * 计算体脂肪重量
- * @param weight 总体重 (kg)
- * @param bodyFatPercentage 体脂率 (%)
- * @returns 体脂肪重量 (kg)
+ * calulate body fat weight
+ * @param weight total weight (kg)
+ * @param bodyFatPercentage body fat percentage (%)
+ * @returns fat weight (kg)
  */
-export function calculateBodyFatWeight(weight: number, bodyFatPercentage?: number): number {
+export function calculateBodyFatWeight(
+  weight: number,
+  bodyFatPercentage?: number,
+): number {
   if (!bodyFatPercentage || bodyFatPercentage === 0) return 0;
   return weight * (bodyFatPercentage / 100);
 }
 
 /**
- * 计算瘦体重（非脂肪重量）
- * @param weight 总体重 (kg)
- * @param bodyFatPercentage 体脂率 (%)
- * @returns 瘦体重 (kg)
+ * calulate lean mass (non-fat weight)
+ * @param weight total weight (kg)
+ * @param bodyFatPercentage body fat percentage (%)
+ * @returns lean mass (kg)
  */
-export function calculateLeanMass(weight: number, bodyFatPercentage?: number): number {
+export function calculateLeanMass(
+  weight: number,
+  bodyFatPercentage?: number,
+): number {
   if (!bodyFatPercentage || bodyFatPercentage === 0) return weight;
   return weight * (1 - bodyFatPercentage / 100);
 }
 
 /**
- * 计算 BMI
- * @param weight 体重 (kg)
- * @param height 身高 (cm)
- * @returns BMI值
- */
-export function calculateBMI(weight: number, height?: number): number | undefined {
-  if (!height || height === 0) return undefined;
-  const heightInMeters = height / 100;
-  return weight / (heightInMeters * heightInMeters);
-}
-
-/**
- * 计算记录的所有派生指标
- * @param record 身体记录
- * @param height 用户身高 (cm) - 可选，用于计算BMI
- * @returns 派生指标对象
+ * calculate derived metrics for a record
+ * @param record body record
+ * @param height user height (cm) - optional, used for BMI calculation
+ * @returns derived metrics object
  */
 export function calculateDerivedMetrics(
   record: BodyRecord,
-  height?: number
+  height?: number,
 ): DerivedMetrics {
   return {
-    bodyFatWeight: calculateBodyFatWeight(record.weight, record.body_fat_percentage),
+    bodyFatWeight: calculateBodyFatWeight(
+      record.weight,
+      record.body_fat_percentage,
+    ),
     leanMass: calculateLeanMass(record.weight, record.body_fat_percentage),
-    bmi: calculateBMI(record.weight, height),
   };
 }
 
 /**
- * 计算变化百分比
- * @param oldValue 旧值
- * @param newValue 新值
- * @returns 变化百分比
+ * calculate percentage change
+ * @param oldValue old value
+ * @param newValue new value
+ * @returns percentage change
  */
-export function calculatePercentageChange(oldValue: number, newValue: number): number {
+export function calculatePercentageChange(
+  oldValue: number,
+  newValue: number,
+): number {
   if (oldValue === 0) return 0;
   return ((newValue - oldValue) / oldValue) * 100;
 }
 
 /**
- * 计算数组的平均值
- * @param values 数值数组
- * @returns 平均值
+ * calculate average of an array
+ * @param values array of numbers
+ * @returns average
  */
 export function calculateAverage(values: number[]): number {
   if (values.length === 0) return 0;
@@ -74,12 +73,15 @@ export function calculateAverage(values: number[]): number {
 }
 
 /**
- * 格式化数字为指定小数位
- * @param value 数值
- * @param decimals 小数位数
- * @returns 格式化后的字符串
+ * format number to specified decimal places
+ * @param value number to format
+ * @param decimals number of decimal places
+ * @returns formatted string
  */
-export function formatNumber(value: number | undefined, decimals: number = 1): string {
+export function formatNumber(
+  value: number | undefined,
+  decimals: number = 1,
+): string {
   if (value === undefined || isNaN(value)) return '-';
   return value.toFixed(decimals);
 }

@@ -5,24 +5,28 @@ A web-based body weight tracking application that helps you record and visualize
 ## Features
 
 ### 📊 Data Tracking
+
 - Record total weight, body fat percentage, body water percentage, and muscle mass
 - Automatically calculate derived metrics such as body fat weight
 - Support for adding notes
 
 ### 📈 Data Visualization
+
 - Body fat weight trend chart
 - Time range filtering (7 days, 30 days, 90 days, all)
 - Interactive charts with hover details
 
 ### 💾 Data Management
+
 - **Cross-Device Sync**: Sync data across multiple devices via export/import
-- Export formats: JSON, CSV
+- Export formats: JSON
 - Multiple sharing methods:
   - Download file (shareable via cloud storage)
   - Copy to clipboard (transferable via messaging apps)
 - Smart merge: Automatically skip duplicate records during import
 
 ### 🎨 User Experience
+
 - Responsive design supporting desktop, tablet, and mobile
 - Uses Noto Sans Traditional Chinese font for optimal Chinese display
 - Local data storage for privacy and security
@@ -83,11 +87,13 @@ npm run preview
 ### Cross-Device Data Sync
 
 #### Method 1: Using Cloud Storage
+
 1. On Device A, click "Settings" → "Export as JSON File"
 2. Upload the file to Google Drive or Dropbox
 3. On Device B, download the file and click "Import from File"
 
 #### Method 2: Using Messaging Apps
+
 1. On Device A, click "Settings" → "Copy to Clipboard"
 2. Send to yourself via LINE, Telegram, etc.
 3. On Device B, copy the content and click "Import from Clipboard"

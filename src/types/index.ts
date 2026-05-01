@@ -1,8 +1,6 @@
-// ========== 数据库记录类型 ==========
-
 export interface BodyRecord {
   id?: number;
-  date: string; // ISO 8601 格式
+  date: string; // ISO 8601 format
   weight: number; // kg
   body_fat_percentage?: number; // %
   water_percentage?: number; // %
@@ -11,19 +9,14 @@ export interface BodyRecord {
   created_at?: string;
 }
 
-// ========== 派生指标类型 ==========
-
 export interface DerivedMetrics {
-  bodyFatWeight: number; // 体脂肪重量 (kg)
-  leanMass: number; // 瘦体重 (kg)
-  bmi?: number; // BMI
+  bodyFatWeight: number; // fat weight (kg)
+  leanMass: number; // lean mass (kg)
 }
 
 export interface RecordWithMetrics extends BodyRecord {
   metrics: DerivedMetrics;
 }
-
-// ========== 用户设置类型 ==========
 
 export interface UserSettings {
   height?: number; // cm
@@ -34,8 +27,6 @@ export interface UserSettings {
 }
 
 export type ChartRange = '7days' | '30days' | '90days' | 'all';
-
-// ========== 图表数据类型 ==========
 
 export interface ChartDataPoint {
   date: string;
@@ -52,8 +43,6 @@ export interface MultiSeriesChartData {
   }[];
 }
 
-// ========== 数据导出/导入类型 ==========
-
 export interface ExportData {
   version: string;
   exportDate: string;
@@ -67,8 +56,6 @@ export interface ImportResult {
   errors: number;
   errorMessages?: string[];
 }
-
-// ========== 统计数据类型 ==========
 
 export interface Statistics {
   totalRecords: number;
@@ -88,8 +75,6 @@ export interface Statistics {
   };
 }
 
-// ========== UI 组件属性类型 ==========
-
 export interface ChartProps {
   data: BodyRecord[];
   range: ChartRange;
@@ -104,8 +89,6 @@ export interface RecordFormData {
   muscle_mass: string;
   notes: string;
 }
-
-// ========== 数据验证类型 ==========
 
 export interface ValidationResult {
   isValid: boolean;

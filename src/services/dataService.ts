@@ -6,16 +6,16 @@ import {
   saveAllSettingsToStorage,
 } from './database';
 
-// ========== Records CRUD Operations ==========
-
 /**
- * 添加新记录
+ * add a new record and return the new record ID
  */
-export function addRecord(record: Omit<BodyRecord, 'id' | 'created_at'>): number {
+export function addRecord(
+  record: Omit<BodyRecord, 'id' | 'created_at'>,
+): number {
   const records = getAllRecordsFromStorage();
 
-  // 生成新 ID
-  const newId = records.length > 0 ? Math.max(...records.map(r => r.id || 0)) + 1 : 1;
+  const newId =
+    records.length > 0 ? Math.max(...records.map((r) => r.id || 0)) + 1 : 1;
 
   const newRecord: BodyRecord = {
     ...record,
@@ -30,15 +30,14 @@ export function addRecord(record: Omit<BodyRecord, 'id' | 'created_at'>): number
 }
 
 /**
- * 获取所有记录
+ * get all records with optional sorting
  */
 export function getAllRecords(
   orderBy: 'date' | 'created_at' = 'date',
-  order: 'ASC' | 'DESC' = 'DESC'
+  order: 'ASC' | 'DESC' = 'DESC',
 ): BodyRecord[] {
   const records = getAllRecordsFromStorage();
 
-  // 排序
   records.sort((a, b) => {
     const aValue = a[orderBy] || '';
     const bValue = b[orderBy] || '';
@@ -54,33 +53,38 @@ export function getAllRecords(
 }
 
 /**
- * 根据ID获取记录
+ * get record by ID
  */
 export function getRecordById(id: number): BodyRecord | null {
   const records = getAllRecordsFromStorage();
-  return records.find(r => r.id === id) || null;
+  return records.find((r) => r.id === id) || null;
 }
 
 /**
- * 获取指定日期范围的记录
+ * get records by date range
  */
-export function getRecordsByDateRange(startDate: string, endDate: string): BodyRecord[] {
+export function getRecordsByDateRange(
+  startDate: string,
+  endDate: string,
+): BodyRecord[] {
   const records = getAllRecordsFromStorage();
 
-  return records.filter(record => {
-    return record.date >= startDate && record.date <= endDate;
-  }).sort((a, b) => a.date.localeCompare(b.date));
+  return records
+    .filter((record) => {
+      return record.date >= startDate && record.date <= endDate;
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /**
- * 更新记录
+ * update a record
  */
 export function updateRecord(
   id: number,
-  record: Partial<Omit<BodyRecord, 'id' | 'created_at'>>
+  record: Partial<Omit<BodyRecord, 'id' | 'created_at'>>,
 ): boolean {
   const records = getAllRecordsFromStorage();
-  const index = records.findIndex(r => r.id === id);
+  const index = records.findIndex((r) => r.id === id);
 
   if (index === -1) return false;
 
@@ -94,11 +98,11 @@ export function updateRecord(
 }
 
 /**
- * 删除记录
+ * delete a record
  */
 export function deleteRecord(id: number): boolean {
   const records = getAllRecordsFromStorage();
-  const filtered = records.filter(r => r.id !== id);
+  const filtered = records.filter((r) => r.id !== id);
 
   if (filtered.length === records.length) return false;
 
@@ -107,20 +111,22 @@ export function deleteRecord(id: number): boolean {
 }
 
 /**
- * 检查记录是否存在
+ * check if a record exists
  */
-export function checkRecordExists(date: string, weight: number, tolerance: number = 0.1): boolean {
+export function checkRecordExists(
+  date: string,
+  weight: number,
+  tolerance: number = 0.1,
+): boolean {
   const records = getAllRecordsFromStorage();
 
-  return records.some(record => {
+  return records.some((record) => {
     return record.date === date && Math.abs(record.weight - weight) < tolerance;
   });
 }
 
-// ========== Settings Operations ==========
-
 /**
- * 获取设置值
+ * get a setting value
  */
 export function getSetting(key: string): string | null {
   const settings = getAllSettingsFromStorage();
@@ -128,7 +134,7 @@ export function getSetting(key: string): string | null {
 }
 
 /**
- * 设置值
+ * set a setting value
  */
 export function setSetting(key: string, value: string): void {
   const settings = getAllSettingsFromStorage();
@@ -137,12 +143,11 @@ export function setSetting(key: string, value: string): void {
 }
 
 /**
- * 获取所有设置
+ * get all settings
  */
 export function getAllSettings(): UserSettings {
   const settings = getAllSettingsFromStorage();
 
-  // 解析 JSON 值
   const parsed: any = {};
   Object.entries(settings).forEach(([key, value]) => {
     try {
@@ -156,27 +161,14 @@ export function getAllSettings(): UserSettings {
 }
 
 /**
- * 保存用户设置
- */
-export function saveUserSettings(settings: Partial<UserSettings>): void {
-  Object.entries(settings).forEach(([key, value]) => {
-    if (value !== undefined) {
-      setSetting(key, JSON.stringify(value));
-    }
-  });
-}
-
-// ========== Statistics ==========
-
-/**
- * 获取记录总数
+ * get record count
  */
 export function getRecordCount(): number {
   return getAllRecordsFromStorage().length;
 }
 
 /**
- * 获取最新记录
+ * get latest record
  */
 export function getLatestRecord(): BodyRecord | null {
   const records = getAllRecords('date', 'DESC');
@@ -184,7 +176,7 @@ export function getLatestRecord(): BodyRecord | null {
 }
 
 /**
- * 获取最早记录
+ * get first record
  */
 export function getFirstRecord(): BodyRecord | null {
   const records = getAllRecords('date', 'ASC');

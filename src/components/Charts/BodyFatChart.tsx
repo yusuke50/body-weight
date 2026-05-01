@@ -15,7 +15,6 @@ import type { BodyRecord, ChartRange } from '../../types';
 import { extractBodyFatWeightData } from '../../utils/chartHelpers';
 import { CHART_COLORS } from '../../utils/chartHelpers';
 
-// 注册 Chart.js 组件
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -34,7 +33,9 @@ interface BodyFatChartProps {
 }
 
 export function BodyFatChart({ records, range, onRangeChange }: BodyFatChartProps) {
+
   const dataPoints = extractBodyFatWeightData(records);
+
 
   const chartData = {
     datasets: [
@@ -135,7 +136,6 @@ export function BodyFatChart({ records, range, onRangeChange }: BodyFatChartProp
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      {/* 时间范围选择器 */}
       <div className="flex justify-end mb-4">
         <div className="flex gap-2">
           {rangeOptions.map((option) => (
@@ -154,13 +154,12 @@ export function BodyFatChart({ records, range, onRangeChange }: BodyFatChartProp
         </div>
       </div>
 
-      {/* 图表 */}
-      <div className="h-[400px]">
+      <div className="h-100">
         {dataPoints.length > 0 ? (
           <Line data={chartData} options={options} />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-500">
-            暫無數據可顯示
+            暫無資料可顯示
           </div>
         )}
       </div>

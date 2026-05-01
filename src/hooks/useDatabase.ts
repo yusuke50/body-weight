@@ -8,8 +8,10 @@ interface UseDatabaseReturn {
 }
 
 /**
- * 数据库初始化 Hook
- * @returns 数据库状态
+ * init database and return the status of the database
+ * @returns status of the database
+ * @example
+ * const { isInitialized, isLoading, error } = useDatabase();
  */
 export function useDatabase(): UseDatabaseReturn {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -24,7 +26,9 @@ export function useDatabase(): UseDatabaseReturn {
         setIsInitialized(true);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('数据库初始化失败'));
+        setError(
+          err instanceof Error ? err : new Error('initialization failed'),
+        );
         setIsInitialized(false);
       } finally {
         setIsLoading(false);

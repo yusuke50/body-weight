@@ -4,25 +4,25 @@ import { calculateBodyFatWeight } from './calculations';
 import { formatDate } from './dateUtils';
 
 /**
- * 图表颜色配置
+ * chart colors for different metrics
  */
 export const CHART_COLORS = {
-  weight: '#3b82f6', // 蓝色
-  bodyFat: '#ef4444', // 红色
-  muscleMass: '#10b981', // 绿色
-  water: '#06b6d4', // 青色
-  bodyFatPercentage: '#f59e0b', // 橙色
+  weight: '#3b82f6',
+  bodyFat: '#ef4444',
+  muscleMass: '#10b981',
+  water: '#06b6d4',
+  bodyFatPercentage: '#f59e0b',
 };
 
 /**
- * 创建折线图的基础配置
- * @param title 图表标题
- * @param yAxisLabel Y轴标签
- * @returns Chart.js配置对象
+ * basic Chart.js options for line charts
+ * @param title chart title
+ * @param yAxisLabel Y-axis label
+ * @returns Chart.js options object
  */
 export function createLineChartOptions(
   title: string,
-  yAxisLabel: string
+  yAxisLabel: string,
 ): ChartOptions<'line'> {
   return {
     responsive: true,
@@ -99,82 +99,90 @@ export function createLineChartOptions(
 }
 
 /**
- * 从记录数组提取体重数据点
- * @param records 记录数组
- * @returns 数据点数组
+ * extract weight data points from records
+ * @param records records array
+ * @returns data points array
  */
 export function extractWeightData(records: BodyRecord[]): ChartDataPoint[] {
-  return records.map(record => ({
+  return records.map((record) => ({
     date: record.date,
     value: record.weight,
   }));
 }
 
 /**
- * 从记录数组提取体脂肪重量数据点
- * @param records 记录数组
- * @returns 数据点数组
+ * extract body fat weight data points from records
+ * @param records records array
+ * @returns data points array
  */
-export function extractBodyFatWeightData(records: BodyRecord[]): ChartDataPoint[] {
-  return records.map(record => ({
-    date: record.date,
-    value: calculateBodyFatWeight(record.weight, record.body_fat_percentage),
-  }));
+export function extractBodyFatWeightData(
+  records: BodyRecord[],
+): ChartDataPoint[] {
+  return records
+    .filter((record) => record.body_fat_percentage !== undefined)
+    .map((record) => ({
+      date: record.date,
+      value: calculateBodyFatWeight(record.weight, record.body_fat_percentage),
+    }));
 }
 
 /**
- * 从记录数组提取体脂率数据点
- * @param records 记录数组
- * @returns 数据点数组
+ * extract body fat percentage data points from records
+ * @param records records array
+ * @returns data points array
  */
-export function extractBodyFatPercentageData(records: BodyRecord[]): ChartDataPoint[] {
+export function extractBodyFatPercentageData(
+  records: BodyRecord[],
+): ChartDataPoint[] {
   return records
-    .filter(record => record.body_fat_percentage !== undefined)
-    .map(record => ({
+    .filter((record) => record.body_fat_percentage !== undefined)
+    .map((record) => ({
       date: record.date,
       value: record.body_fat_percentage!,
     }));
 }
 
 /**
- * 从记录数组提取肌肉量数据点
- * @param records 记录数组
- * @returns 数据点数组
+ * extract muscle mass data points from records
+ * @param records records array
+ * @returns data points array
  */
 export function extractMuscleMassData(records: BodyRecord[]): ChartDataPoint[] {
   return records
-    .filter(record => record.muscle_mass !== undefined)
-    .map(record => ({
+    .filter((record) => record.muscle_mass !== undefined)
+    .map((record) => ({
       date: record.date,
       value: record.muscle_mass!,
     }));
 }
 
 /**
- * 从记录数组提取含水量数据点
- * @param records 记录数组
- * @returns 数据点数组
+ * extract water percentage data points from records
+ * @param records records array
+ * @returns data points array
  */
-export function extractWaterPercentageData(records: BodyRecord[]): ChartDataPoint[] {
+export function extractWaterPercentageData(
+  records: BodyRecord[],
+): ChartDataPoint[] {
   return records
-    .filter(record => record.water_percentage !== undefined)
-    .map(record => ({
+    .filter((record) => record.water_percentage !== undefined)
+    .map((record) => ({
       date: record.date,
       value: record.water_percentage!,
     }));
 }
 
 /**
- * 将数据点数组转换为Chart.js数据格式
- * @param dataPoints 数据点数组
- * @returns Chart.js数据对象
+ * format data points array into Chart.js data format
+ * @param dataPoints data points array
+ * @returns Chart.js data object
  */
 export function formatChartData(dataPoints: ChartDataPoint[]) {
   return {
-    labels: dataPoints.map(dp => dp.date),
+    labels: dataPoints.map((dp) => dp.date),
     datasets: [
       {
-        data: dataPoints.map(dp => ({ x: dp.date, y: dp.value })),
+        data: dataPoints.map((dp) => ({ x: dp.date, y: dp.value })),
       },
     ],
   };

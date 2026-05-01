@@ -1,89 +1,92 @@
-import { format, parseISO, subDays, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import type { ChartRange } from '../types';
 
 /**
- * 格式化日期为显示格式
- * @param dateString ISO日期字符串
- * @param formatString 格式化模板
- * @returns 格式化后的日期字符串
+ * format timestamp to date string
+ * @param timestamp target timestamp
+ * @param formatString date format string (default: 'yyyy-MM-dd')
+ * @returns formatted date string
  */
-export function formatDate(dateString: string, formatString: string = 'yyyy-MM-dd'): string {
+export function formatDate(
+  dateString: string,
+  formatString: string = 'yyyy-MM-dd',
+): string {
   try {
-    const date = parseISO(dateString);
+    const date = new Date(dateString);
     return format(date, formatString);
   } catch {
-    return dateString;
+    return new Date(dateString).toLocaleDateString();
   }
 }
 
 /**
- * 格式化日期为显示格式（包含时间）
- * @param dateString ISO日期字符串
- * @returns 格式化后的日期时间字符串
+ * format timestamp to date and time string
+ * @param dateString iso date string
+ * @returns formatted date and time string
  */
 export function formatDateTime(dateString: string): string {
   return formatDate(dateString, 'yyyy-MM-dd HH:mm');
 }
 
 /**
- * 获取当前日期时间的ISO字符串
- * @returns ISO格式的日期时间字符串
+ * get current date and time
+ * @returns current timestamp
  */
+function toLocalDateTimeString(date: Date): string {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+}
+
 export function getCurrentDateTime(): string {
-  return new Date().toISOString();
+  return toLocalDateTimeString(new Date());
 }
 
 /**
- * 获取今天的日期（YYYY-MM-DD格式）
- * @returns 今天的日期字符串
- */
-export function getTodayDate(): string {
-  return format(new Date(), 'yyyy-MM-dd');
-}
-
-/**
- * 根据图表范围获取起始日期
- * @param range 图表范围
- * @returns 起始日期的ISO字符串
+ * get start date for chart range
+ * @param range range type
+ * @returns start date ISO string or null for 'all' range
  */
 export function getStartDateForRange(range: ChartRange): string | null {
   const now = new Date();
 
   switch (range) {
     case '7days':
-      return subDays(now, 7).toISOString();
+      return toLocalDateTimeString(subDays(now, 7));
     case '30days':
-      return subDays(now, 30).toISOString();
+      return toLocalDateTimeString(subDays(now, 30));
     case '90days':
-      return subDays(now, 90).toISOString();
+      return toLocalDateTimeString(subDays(now, 90));
     case 'all':
-      return null; // 返回null表示不限制起始日期
+      return null;
     default:
       return null;
   }
 }
 
 /**
- * 检查日期是否在范围内
- * @param dateString 待检查的日期
- * @param range 图表范围
- * @returns 是否在范围内
+ * check if a date is within the specified chart range
+ * @param dateTimeString target date
+ * @param range chart range
+ * @returns boolean
  */
-export function isDateInRange(dateString: string, range: ChartRange): boolean {
+export function isDateInRange(
+  dateTimeString: string,
+  range: ChartRange,
+): boolean {
   if (range === 'all') return true;
 
-  const date = parseISO(dateString);
   const startDate = getStartDateForRange(range);
 
   if (!startDate) return true;
 
-  return isAfter(date, parseISO(startDate)) || date.getTime() === parseISO(startDate).getTime();
+  return dateTimeString >= startDate;
 }
 
 /**
- * 对日期字符串数组进行排序（升序）
- * @param dates 日期字符串数组
- * @returns 排序后的日期数组
+ * sort an array of date strings in ascending order
+ * @param dates date strings array
+ * @returns sorted dates array
  */
 export function sortDatesAscending(dates: string[]): string[] {
   return [...dates].sort((a, b) => {
@@ -94,9 +97,9 @@ export function sortDatesAscending(dates: string[]): string[] {
 }
 
 /**
- * 对日期字符串数组进行排序（降序）
- * @param dates 日期字符串数组
- * @returns 排序后的日期数组
+ * sort an array of date strings in descending order
+ * @param dates date strings array
+ * @returns sorted dates array
  */
 export function sortDatesDescending(dates: string[]): string[] {
   return [...dates].sort((a, b) => {
@@ -107,10 +110,10 @@ export function sortDatesDescending(dates: string[]): string[] {
 }
 
 /**
- * 获取两个日期之间的天数
- * @param startDate 起始日期
- * @param endDate 结束日期
- * @returns 天数
+ * get the number of days between two dates
+ * @param startDate start date
+ * @param endDate end date
+ * @returns number of days
  */
 export function getDaysBetween(startDate: string, endDate: string): number {
   const start = parseISO(startDate);

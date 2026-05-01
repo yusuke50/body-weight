@@ -1,12 +1,11 @@
-// 使用 localStorage 直接存储数据（简化版本，无需 sql.js）
-
+// use localStorage save data, for better compatibility and simplicity
 const DB_STORAGE_KEY = 'bodyweight_db_v2';
 const SETTINGS_STORAGE_KEY = 'bodyweight_settings';
 
 let isInitialized = false;
 
 /**
- * 初始化数据库（localStorage 版本）
+ * initialize the database (localStorage in this case)
  */
 export async function initDatabase(): Promise<void> {
   if (isInitialized) {
@@ -14,10 +13,8 @@ export async function initDatabase(): Promise<void> {
   }
 
   try {
-    // 检查是否有现有数据
     const existingData = localStorage.getItem(DB_STORAGE_KEY);
     if (!existingData) {
-      // 初始化空数据
       localStorage.setItem(DB_STORAGE_KEY, JSON.stringify([]));
     }
 
@@ -27,77 +24,80 @@ export async function initDatabase(): Promise<void> {
     }
 
     isInitialized = true;
-    console.log('数据库（localStorage）已初始化');
+    console.log('initDatabase: Database initialized successfully');
   } catch (error) {
-    console.error('初始化失败:', error);
+    console.error('initDatabase: Failed to initialize database:', error);
     throw error;
   }
 }
 
 /**
- * 获取所有记录
+ * get all records from storage
+ * @returns array of records
  */
 export function getAllRecordsFromStorage(): any[] {
   try {
     const data = localStorage.getItem(DB_STORAGE_KEY);
     return data ? JSON.parse(data) : [];
   } catch (error) {
-    console.error('读取记录失败:', error);
+    console.error('getAllRecordsFromStorage: Failed to read records:', error);
     return [];
   }
 }
 
 /**
- * 保存所有记录
+ * save all records to storage
+ * @param records array of records to save
  */
 export function saveAllRecordsToStorage(records: any[]): void {
   try {
     localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(records));
-    console.log('数据已保存');
   } catch (error) {
-    console.error('保存记录失败:', error);
+    console.error('saveAllRecordsToStorage: Failed to save records:', error);
     throw error;
   }
 }
 
 /**
- * 获取所有设置
+ * get all settings from storage
+ * @returns array of settings
  */
 export function getAllSettingsFromStorage(): any {
   try {
     const data = localStorage.getItem(SETTINGS_STORAGE_KEY);
     return data ? JSON.parse(data) : {};
   } catch (error) {
-    console.error('读取设置失败:', error);
+    console.error('getAllSettingsFromStorage: Failed to read settings:', error);
     return {};
   }
 }
 
 /**
- * 保存所有设置
+ * save all settings to storage
+ * @param settings array of settings to save
  */
 export function saveAllSettingsToStorage(settings: any): void {
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
   } catch (error) {
-    console.error('保存设置失败:', error);
+    console.error('saveAllSettingsToStorage: Failed to save settings:', error);
     throw error;
   }
 }
 
 /**
- * 清空所有数据
+ * clear all data from storage (for testing or reset purposes)
  */
 export function clearAllData(): void {
   localStorage.removeItem(DB_STORAGE_KEY);
   localStorage.removeItem(SETTINGS_STORAGE_KEY);
   localStorage.setItem(DB_STORAGE_KEY, JSON.stringify([]));
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({}));
-  console.log('所有数据已清空');
+  console.log('clearAllData: All data has been cleared');
 }
 
 /**
- * 导出数据库为 JSON
+ * export database as JSON string
  */
 export function exportDatabaseBinary(): string {
   const records = getAllRecordsFromStorage();
@@ -106,7 +106,9 @@ export function exportDatabaseBinary(): string {
 }
 
 /**
- * 从 JSON 导入数据库
+ * import database from JSON string
+ * @param jsonString JSON string containing records and settings
+ * @throws error if JSON parsing fails or data is invalid
  */
 export async function importDatabaseBinary(jsonString: string): Promise<void> {
   try {
@@ -117,22 +119,9 @@ export async function importDatabaseBinary(jsonString: string): Promise<void> {
     if (data.settings) {
       saveAllSettingsToStorage(data.settings);
     }
-    console.log('数据库导入成功');
+    console.log('initDatabase: Database imported successfully');
   } catch (error) {
-    console.error('导入数据库失败:', error);
+    console.error('initDatabase: Failed to import database:', error);
     throw error;
   }
-}
-
-// 兼容性函数（保持原有接口）
-export function getDatabase(): any {
-  return { initialized: isInitialized };
-}
-
-export function saveDatabase(): void {
-  // localStorage 自动保存，无需额外操作
-}
-
-export function closeDatabase(): void {
-  isInitialized = false;
 }
