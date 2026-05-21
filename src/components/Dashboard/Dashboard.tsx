@@ -37,18 +37,18 @@ export function Dashboard({ latestRecord, firstRecord, totalCount, onAddRecord }
         <StatCard
           title="總記錄數"
           value={totalCount.toString()}
-          icon="📊"
+          icon="Database"
         />
         <StatCard
           title="目前體重"
           value={latestRecord ? `${latestRecord.weight} kg` : '-'}
           subtitle={weightChange !== 0 ? `${weightChange > 0 ? '+' : ''}${formatNumber(weightChange, 1)} kg` : undefined}
-          icon="⚖️"
+          icon="WeightTilde"
         />
         <StatCard
           title="目前體脂率"
           value={latestRecord?.body_fat_percentage ? `${latestRecord.body_fat_percentage}%` : '-'}
-          icon="📉"
+          icon="Percent"
         />
         <StatCard
           title="體脂肪重量"
@@ -58,7 +58,7 @@ export function Dashboard({ latestRecord, firstRecord, totalCount, onAddRecord }
               : '-'
           }
           subtitle={bodyFatChange !== 0 ? `${bodyFatChange > 0 ? '+' : ''}${formatNumber(bodyFatChange, 1)} kg` : undefined}
-          icon="🔥"
+          icon="Bomb"
         />
       </div>
 

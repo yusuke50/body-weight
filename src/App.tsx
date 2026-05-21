@@ -137,7 +137,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {records.map((record) => {
+                    {[...records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((record) => {
                       const isEditing = editingId === record.id;
                       return (
                         <tr key={record.id}>
