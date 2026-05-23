@@ -4,6 +4,7 @@ import { Navigation } from './components/Layout/Navigation';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { BodyFatChart } from './components/Charts/BodyFatChart';
 import { DataManagement } from './components/Settings/DataManagement';
+import { ProfileSettings } from './components/Settings/ProfileSettings';
 import { useDatabase } from './hooks/useDatabase';
 import { useRecords } from './hooks/useRecords';
 import { Trash2, SquarePen, Save } from 'lucide-react';
@@ -108,8 +109,8 @@ function App() {
 
         {currentView === 'data' && (
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">記錄列表</h2>
-            <p className="text-gray-600 mb-4">總共 {totalCount} 筆記錄</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">紀錄列表</h2>
+            <p className="text-gray-600 mb-4">總共 {totalCount} 筆紀錄</p>
 
             {records.length > 0 ? (
               <div className="overflow-x-auto">
@@ -228,7 +229,10 @@ function App() {
         )}
 
         {currentView === 'settings' && (
-          <DataManagement onDataImported={refreshRecords} />
+          <div className="space-y-6">
+            <ProfileSettings />
+            <DataManagement onDataImported={refreshRecords} />
+          </div>
         )}
       </div>
     </Layout>
