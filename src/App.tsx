@@ -26,7 +26,7 @@ function App() {
     deleteRecord,
     totalCount,
     latestRecord,
-    firstRecord,
+    previousRecord,
     refreshRecords,
     isLoading: recordsLoading,
   } = useRecords();
@@ -85,7 +85,7 @@ function App() {
         {currentView === 'dashboard' && (
           <Dashboard
             latestRecord={latestRecord}
-            firstRecord={firstRecord}
+            previousRecord={previousRecord}
             totalCount={totalCount}
             onAddRecord={addRecord}
           />

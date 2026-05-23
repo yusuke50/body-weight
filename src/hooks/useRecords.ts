@@ -5,9 +5,6 @@ import {
   addRecord as addRecordService,
   updateRecord as updateRecordService,
   deleteRecord as deleteRecordService,
-  getRecordCount,
-  getLatestRecord,
-  getFirstRecord,
 } from '../services/dataService';
 import { isDateInRange } from '../utils/dateUtils';
 
@@ -25,7 +22,7 @@ interface UseRecordsReturn {
   refreshRecords: () => void;
   totalCount: number;
   latestRecord: BodyRecord | null;
-  firstRecord: BodyRecord | null;
+  previousRecord: BodyRecord | null;
   isLoading: boolean;
 }
 
@@ -109,7 +106,8 @@ export function useRecords(): UseRecordsReturn {
 
   const totalCount = records.length;
   const latestRecord = records.length > 0 ? records[records.length - 1] : null;
-  const firstRecord = records.length > 0 ? records[0] : null;
+  const previousRecord =
+    records.length > 1 ? records[records.length - 2] : null;
 
   return {
     records,
@@ -122,7 +120,7 @@ export function useRecords(): UseRecordsReturn {
     refreshRecords: loadRecords,
     totalCount,
     latestRecord,
-    firstRecord,
+    previousRecord,
     isLoading,
   };
 }

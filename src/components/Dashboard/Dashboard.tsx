@@ -2,28 +2,34 @@ import { useState } from 'react';
 import type { BodyRecord } from '../../types';
 import { EntryForm } from '../DataEntry/EntryForm';
 import { StatCard } from './StatCard';
-import { calculateBodyFatWeight, formatNumber } from '../../utils/calculations';
+import { calculateNetWeight, calculateBodyFatWeight, formatNumber } from '../../utils/calculations';
 import { formatDateTime } from '../../utils/dateUtils';
 
 interface DashboardProps {
   latestRecord: BodyRecord | null;
-  firstRecord: BodyRecord | null;
+  previousRecord: BodyRecord | null;
   totalCount: number;
   onAddRecord: (record: Omit<BodyRecord, 'id' | 'created_at'>) => Promise<number>;
 }
 
-export function Dashboard({ latestRecord, firstRecord, totalCount, onAddRecord }: DashboardProps) {
+export function Dashboard({ latestRecord, previousRecord, totalCount, onAddRecord }: DashboardProps) {
   const [isAddingRecord, setIsAddingRecord] = useState(false);
 
   const weightChange =
-    latestRecord && firstRecord
-      ? latestRecord.weight - firstRecord.weight
+    latestRecord && previousRecord
+      ? latestRecord.weight - previousRecord.weight
+      : 0;
+  
+  const netWeightChange =
+    latestRecord && previousRecord
+      ? calculateNetWeight(latestRecord.weight, latestRecord.body_fat_percentage) -
+        calculateNetWeight(previousRecord.weight, previousRecord.body_fat_percentage)
       : 0;
 
   const bodyFatChange =
-    latestRecord && firstRecord && latestRecord.body_fat_percentage && firstRecord.body_fat_percentage
+    latestRecord && previousRecord && latestRecord.body_fat_percentage && previousRecord.body_fat_percentage
       ? calculateBodyFatWeight(latestRecord.weight, latestRecord.body_fat_percentage) -
-        calculateBodyFatWeight(firstRecord.weight, firstRecord.body_fat_percentage)
+        calculateBodyFatWeight(previousRecord.weight, previousRecord.body_fat_percentage)
       : 0;
 
   const handleAddRecord = async (record: Omit<BodyRecord, 'id' | 'created_at'>) => {
@@ -42,22 +48,27 @@ export function Dashboard({ latestRecord, firstRecord, totalCount, onAddRecord }
         <StatCard
           title="目前體重"
           value={latestRecord ? `${latestRecord.weight} kg` : '-'}
-          subtitle={weightChange !== 0 ? `${weightChange > 0 ? '+' : ''}${formatNumber(weightChange, 1)} kg` : undefined}
+          subtitle={weightChange !== 0 ? `${weightChange > 0 ? '+' : ''}${formatNumber(weightChange)} kg` : undefined}
           icon="WeightTilde"
         />
         <StatCard
-          title="目前體脂率"
-          value={latestRecord?.body_fat_percentage ? `${latestRecord.body_fat_percentage}%` : '-'}
-          icon="Percent"
+          title="目前淨體重"
+          value={
+            latestRecord && latestRecord.body_fat_percentage
+              ? `${formatNumber(calculateNetWeight(latestRecord.weight, latestRecord.body_fat_percentage))} kg`
+              : '-'
+          }
+          subtitle={netWeightChange !== 0 ? `${netWeightChange > 0 ? '+' : ''}${formatNumber(netWeightChange)} kg` : undefined}
+          icon="Dumbbell"
         />
         <StatCard
-          title="體脂肪重量"
+          title="目前體脂重"
           value={
             latestRecord && latestRecord.body_fat_percentage
               ? `${formatNumber(calculateBodyFatWeight(latestRecord.weight, latestRecord.body_fat_percentage))} kg`
               : '-'
           }
-          subtitle={bodyFatChange !== 0 ? `${bodyFatChange > 0 ? '+' : ''}${formatNumber(bodyFatChange, 1)} kg` : undefined}
+          subtitle={bodyFatChange !== 0 ? `${bodyFatChange > 0 ? '+' : ''}${formatNumber(bodyFatChange)} kg` : undefined}
           icon="Bomb"
         />
       </div>

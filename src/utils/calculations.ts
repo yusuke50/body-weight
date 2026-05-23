@@ -1,6 +1,20 @@
 import type { BodyRecord, DerivedMetrics } from '../types';
 
 /**
+ * calulate net weight
+ * @param weight total weight (kg)
+ * @param bodyFatPercentage body fat percentage (%)
+ * @returns net weight (kg)
+ */
+export function calculateNetWeight(
+  weight: number,
+  bodyFatPercentage?: number,
+): number {
+  if (!bodyFatPercentage || bodyFatPercentage === 0) return 0;
+  return weight * ((100 - bodyFatPercentage) / 100);
+}
+
+/**
  * calulate body fat weight
  * @param weight total weight (kg)
  * @param bodyFatPercentage body fat percentage (%)
@@ -80,8 +94,11 @@ export function calculateAverage(values: number[]): number {
  */
 export function formatNumber(
   value: number | undefined,
-  decimals: number = 1,
+  decimals: number = 2,
 ): string {
   if (value === undefined || isNaN(value)) return '-';
-  return value.toFixed(decimals);
+  return new Intl.NumberFormat('zh-TW', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
 }
