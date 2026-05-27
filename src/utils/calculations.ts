@@ -29,61 +29,25 @@ export function calculateBodyFatWeight(
 }
 
 /**
- * calulate lean mass (non-fat weight)
+ * calculate FFMI
  * @param weight total weight (kg)
  * @param bodyFatPercentage body fat percentage (%)
- * @returns lean mass (kg)
+ * @param height user height (cm)
+ * @param type 'default' or 'adjusted'
+ * @returns FFMI value
  */
-export function calculateLeanMass(
+export function calculateFFMI(
   weight: number,
-  bodyFatPercentage?: number,
+  bodyFatPercentage: number,
+  height: number,
+  type?: 'default' | 'adjusted',
 ): number {
-  if (!bodyFatPercentage || bodyFatPercentage === 0) return weight;
-  return weight * (1 - bodyFatPercentage / 100);
-}
-
-/**
- * calculate derived metrics for a record
- * @param record body record
- * @param height user height (cm) - optional, used for BMI calculation
- * @returns derived metrics object
- */
-export function calculateDerivedMetrics(
-  record: BodyRecord,
-  height?: number,
-): DerivedMetrics {
-  return {
-    bodyFatWeight: calculateBodyFatWeight(
-      record.weight,
-      record.body_fat_percentage,
-    ),
-    leanMass: calculateLeanMass(record.weight, record.body_fat_percentage),
-  };
-}
-
-/**
- * calculate percentage change
- * @param oldValue old value
- * @param newValue new value
- * @returns percentage change
- */
-export function calculatePercentageChange(
-  oldValue: number,
-  newValue: number,
-): number {
-  if (oldValue === 0) return 0;
-  return ((newValue - oldValue) / oldValue) * 100;
-}
-
-/**
- * calculate average of an array
- * @param values array of numbers
- * @returns average
- */
-export function calculateAverage(values: number[]): number {
-  if (values.length === 0) return 0;
-  const sum = values.reduce((acc, val) => acc + val, 0);
-  return sum / values.length;
+  height = height || 180;
+  const leanMass = calculateNetWeight(weight, bodyFatPercentage);
+  const heightInMeters = height / 100;
+  const FFMI = leanMass / (heightInMeters * heightInMeters);
+  const adjustedFFMI = FFMI + 6 * (1.8 - heightInMeters);
+  return type === 'adjusted' ? adjustedFFMI : FFMI;
 }
 
 /**

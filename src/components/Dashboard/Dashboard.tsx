@@ -2,8 +2,9 @@ import { useState } from 'react';
 import type { BodyRecord } from '../../types';
 import { EntryForm } from '../DataEntry/EntryForm';
 import { StatCard } from './StatCard';
-import { calculateNetWeight, calculateBodyFatWeight, formatNumber } from '../../utils/calculations';
+import { calculateNetWeight, calculateBodyFatWeight, calculateFFMI, formatNumber } from '../../utils/calculations';
 import { formatDateTime } from '../../utils/dateUtils';
+import { useProfile } from '../../hooks/useProfile';
 
 interface DashboardProps {
   latestRecord: BodyRecord | null;
@@ -14,6 +15,7 @@ interface DashboardProps {
 
 export function Dashboard({ latestRecord, previousRecord, totalCount, onAddRecord }: DashboardProps) {
   const [isAddingRecord, setIsAddingRecord] = useState(false);
+  const { height } = useProfile();
 
   const weightChange =
     latestRecord && previousRecord
@@ -70,6 +72,20 @@ export function Dashboard({ latestRecord, previousRecord, totalCount, onAddRecor
           }
           subtitle={bodyFatChange !== 0 ? `${bodyFatChange > 0 ? '+' : ''}${formatNumber(bodyFatChange)} kg` : undefined}
           icon="Bomb"
+        />
+        <StatCard
+          title="FFMI"
+          value={
+            latestRecord && latestRecord.body_fat_percentage && height != null
+              ? `${formatNumber(calculateFFMI(latestRecord.weight, latestRecord.body_fat_percentage, height))}`
+              : '-'
+          }
+          subtitle={
+            latestRecord && latestRecord.body_fat_percentage && height != null
+              ? `${formatNumber(calculateFFMI(latestRecord.weight, latestRecord.body_fat_percentage, height, 'adjusted'))} (adjusted)`
+              : undefined
+          }
+          icon="LandPlot"
         />
       </div>
 
