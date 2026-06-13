@@ -33,6 +33,13 @@ export function EntryForm({ onSubmit, onCancel, initialData }: EntryFormProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -106,6 +113,7 @@ export function EntryForm({ onSubmit, onCancel, initialData }: EntryFormProps) {
             step="0.1"
             value={formData.weight}
             onChange={(e) => handleChange('weight', e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="57.5"
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.weight ? 'border-red-500' : 'border-gray-300'
@@ -124,6 +132,7 @@ export function EntryForm({ onSubmit, onCancel, initialData }: EntryFormProps) {
             step="0.1"
             value={formData.body_fat_percentage}
             onChange={(e) => handleChange('body_fat_percentage', e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="32.5"
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.body_fat_percentage ? 'border-red-500' : 'border-gray-300'
@@ -144,6 +153,7 @@ export function EntryForm({ onSubmit, onCancel, initialData }: EntryFormProps) {
             step="0.1"
             value={formData.muscle_mass}
             onChange={(e) => handleChange('muscle_mass', e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="37.5"
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.muscle_mass ? 'border-red-500' : 'border-gray-300'
@@ -162,6 +172,7 @@ export function EntryForm({ onSubmit, onCancel, initialData }: EntryFormProps) {
             step="0.1"
             value={formData.water_percentage}
             onChange={(e) => handleChange('water_percentage', e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="50.5"
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.water_percentage ? 'border-red-500' : 'border-gray-300'
@@ -181,7 +192,8 @@ export function EntryForm({ onSubmit, onCancel, initialData }: EntryFormProps) {
             rows={3}
             value={formData.notes}
             onChange={(e) => handleChange('notes', e.target.value)}
-            placeholder="Other notes..."
+            onKeyDown={handleKeyDown}
+            placeholder="Other notes... (Shift+Enter 換行)"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
