@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backend (Python)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.env
+
+# SQLite database and its WAL sidecars -- local state, never committed
+*.db
+*.db-wal
+*.db-shm
+
+# Export files dropped in for the importer are personal data; keep the dir
+backend/data/*
+!backend/data/.gitkeep

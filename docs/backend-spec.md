@@ -1,6 +1,6 @@
 # Backend Spec — FastAPI + SQLite
 
-**Status: design settled, nothing implemented yet.** The four open decisions in §6 were answered on 2026-08-04 and §2–§5 have been rewritten against them, so this spec is now buildable as written. This is the M1 target (see [CLAUDE.md](../CLAUDE.md) working rules). M2 is wiring the existing React frontend to it; this document does not change any file under `src/`.
+**Status: M1 skeleton built and verified against this spec (2026-08-05).** The four decisions in §6 were answered on 2026-08-04, §2–§5 were rewritten against them, and the `backend/` service now implements all of it — schema, CRUD, settings, and both import entry points. Verified end-to-end in the container on 2026-08-05: the image builds, `docker compose up --wait` reports healthy, `GET /api/health` returns 200, the §3.6 envelope was checked against the 404 / 400 / 422 paths, and the CLI importer's `--dry-run` ran inside the container against a real export file (including a deliberately planted same-minute collision, which it caught). Both databases are still empty apart from `schema_version` — no data has been migrated yet. That pass also turned up one blocking defect: see "Known defect: the container clock is UTC" in §3.2. This is the M1 target (see [CLAUDE.md](../CLAUDE.md) working rules). M2 is wiring the existing React frontend to it; nothing here changes any file under `src/`.
 
 Goal: replace the browser-localStorage data layer with a real Python API + relational DB, without changing the domain model the frontend already speaks.
 
@@ -94,6 +94,14 @@ CREATE TABLE IF NOT EXISTS settings (
 ```
 
 The `CHECK` constraints intentionally mirror `utils/validators.ts` (weight 0–500, percentages 0–100, muscle mass ≤ weight) so the DB is the last line of defence and Pydantic is the first.
+
+### Two implementation notes that bit during M1
+
+Both are recorded here because neither is visible in the DDL above, and both fail *silently* — the code looks correct and does the wrong thing.
+
+1. **`AUTOINCREMENT` needs the `sqlite_autoincrement` dialect option**, not just SQLAlchemy's `autoincrement=True`. That flag only marks which column the ORM treats as generated; the keyword comes from `__table_args__ = (..., {"sqlite_autoincrement": True})`. Without it you get a bare `INTEGER PRIMARY KEY` — a rowid alias that reuses ids exactly like `addRecord` does today, which is the whole bug this column exists to fix. Verify it in the emitted DDL and check that `sqlite_sequence` has a `records` row; don't trust it.
+
+2. **The PRAGMAs must go in a connection-level event hook**, not a one-off call at startup — `foreign_keys` is per-connection and SQLAlchemy's pool opens connections lazily, so a single call at boot misses most of them. And on top of that, **`pysqlite` manages transactions itself by default, which breaks `SAVEPOINT`**: the importer's per-row savepoints (§4 rules 4 + 7) end up committing, so `--dry-run` writes to the database. The fix is SQLAlchemy's documented pysqlite workaround — set `isolation_level = None` on connect and emit `BEGIN` from a `begin` event handler. This one is worth a deliberate test: a dry run that quietly writes looks like a successful dry run.
 
 ### Decided: two keys, doing two different jobs (§6-1)
 
@@ -221,6 +229,18 @@ Request — `date` and `weight` required, everything else optional:
 
 Validation mirrors `validateRecordForm`: `weight` in (0, 500); percentages in [0, 100]; `muscle_mass` in (0, weight]; `date` must parse and **must not be in the future**. Failures return `422` (§3.6).
 
+#### Known defect: the container clock is UTC, so the future check rejects valid records
+
+Found 2026-08-05, **not yet fixed** — it blocks M2 and nothing else.
+
+`date` is local-naive: it is whatever wall clock the *browser* is on (UTC+8 here). The future check in `utils.local_now_date()` compares it against `datetime.now()`, which is whatever wall clock the *server* is on. Those are the same thing when uvicorn runs on the host — which is why this passed local testing — and eight hours apart inside the container, where `TZ` is unset and Debian defaults to UTC.
+
+Measured: container `datetime.now()` = `2026-08-05T06:14` while the host was at `14:14`. A record dated `2026-08-05T14:09` — five minutes old — came back `422 must be a valid date and not in the future`. Net effect: **the API rejects every record from the past 8 hours**, i.e. exactly the ones a user enters right after weighing themselves.
+
+The CLI importer is unaffected: it calls `normalize_date`, never `is_valid_date`, so the migration path (§4.1) is safe and the dry-run reports stayed green throughout.
+
+Note the timezone comment in `utils.py:36` is what encoded the wrong assumption — it says reading the server's timezone is "correct for the localhost single-user setup M1 targets", which holds for bare uvicorn but not for the container that same spec section prescribes.
+
 Duplicate handling: `date` is UNIQUE (§2), so a create at an existing `date` returns `409 Conflict` with the existing record — regardless of weight — rather than silently creating a near-twin. Catch the `IntegrityError` and translate it; don't pre-check with a `SELECT`, which would race.
 
 ```json
@@ -281,6 +301,8 @@ docker compose run --rm api python -m app.scripts.import_json /data/import/body-
 ```
 
 Flags: `--strategy skip|overwrite` (default `skip`) · `--dry-run` (report only, no writes).
+
+**Run this from PowerShell, not Git Bash.** Git Bash (MSYS2) rewrites any argument that looks like a Unix absolute path into a Windows one, so `/data/import/foo.json` reaches the container as `C:/Program Files/Git/data/import/foo.json` and the script exits 2 with `error: no such file`. The path never gets mangled on the way in — it is mangled before `docker` is even invoked, which is why the mount looks fine when you go and check it. Three workarounds if you are already in Git Bash: prefix `MSYS_NO_PATHCONV=1`, double the leading slash (`//data/import/...`), or pass it relative to the image's `WORKDIR=/app` (`../data/import/...`). All four routes were verified to produce identical reports.
 
 `--dry-run` is not optional politeness here — run it first. With `date` now UNIQUE (§2) it is what tells you whether the export file contains same-minute collisions before you commit to the migration. Its report should separate the two kinds of duplicate, because they mean different things and only one of them is suspicious:
 
@@ -345,28 +367,36 @@ So the plan below is **one `api` service plus a named volume** holding `bodyweig
 ### Layout
 
 ```
+compose.yaml              # repo ROOT, so `docker compose build` works from D:\code\body-weight
 backend/
 ├── app/
-│   ├── main.py           # FastAPI app, router registration
-│   ├── db.py             # engine/session, PRAGMA setup
+│   ├── main.py           # FastAPI app, CORS, router registration
+│   ├── config.py         # env-backed settings (DATABASE_URL, CORS_ORIGINS)
+│   ├── db.py             # engine/session, PRAGMA setup, init_db
 │   ├── models.py         # SQLAlchemy tables (§2)
 │   ├── schemas.py        # Pydantic request/response models (§3)
+│   ├── errors.py         # the one error envelope (§3.6)
+│   ├── utils.py          # the two timestamp formats (§1)
 │   ├── routers/
+│   │   ├── health.py
 │   │   ├── records.py
 │   │   ├── settings.py
 │   │   └── imports.py
 │   ├── services/
 │   │   ├── records.py    # CRUD + checkRecordExists port
+│   │   ├── settings.py   # JSON-encode on write, parse on read
 │   │   └── importer.py   # shared by CLI + endpoint (§4)
 │   └── scripts/
 │       └── import_json.py
 ├── data/                 # bind-mounted; drop export files here to import
 ├── Dockerfile
-├── pyproject.toml
-└── compose.yaml
+├── .dockerignore
+└── pyproject.toml
 ```
 
-Deliberately **outside** `src/` — see the "What backend means here" note in CLAUDE.md.
+`compose.yaml` sits at the repo root rather than inside `backend/` so `docker compose build` works from the project directory you are already in. Its paths (`build: ./backend`, `./backend/data:/data/import:ro`) are therefore relative to the root — the two have to agree, and putting the file in `backend/` while keeping `./backend/...` paths would resolve to `backend/backend/`.
+
+Everything else is deliberately **outside** `src/` — see the "What backend means here" note in CLAUDE.md.
 
 ### `compose.yaml` (SQLite)
 

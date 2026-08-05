@@ -1,0 +1,47 @@
+# Compose file for the M1 backend (docs/backend-spec.md §5).
+#
+# Lives at the repo ROOT (not in backend/) so `docker compose build` / `up`
+# works straight from D:\code\body-weight without cd-ing anywhere. All paths
+# below are therefore relative to the repo root.
+#
+# SQLite has no DB server -- it is a file linked into the API process -- so
+# there is no second `db` service to run. What a separate DB service would
+# have bought us (data surviving rebuilds) comes from the named volume instead.
+# The Postgres two-service variant is sketched in backend-spec.md §5.
+
+services:
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      # 4 slashes = absolute path inside the container: /data/bodyweight.db
+      DATABASE_URL: sqlite:////data/bodyweight.db
+      # Must include the Vite dev server origin or M2 wiring dies at the first
+      # fetch with an opaque CORS error.
+      CORS_ORIGINS: http://localhost:5173
+    volumes:
+      # The DB file lives in a NAMED volume, deliberately not a bind mount:
+      # bind-mounted SQLite on Windows/WSL hits file-locking problems that
+      # surface as confusing `database is locked` errors.
+      - db-data:/data
+      # Drop export JSON files in backend/data/ to import them (§4.1).
+      - ./backend/data:/data/import:ro
+      # Dev convenience: live reload on edit. A prod compose file drops this
+      # mount and the --reload flag below.
+      - ./backend/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  db-data:
