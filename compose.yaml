@@ -20,6 +20,15 @@ services:
       # Must include the Vite dev server origin or M2 wiring dies at the first
       # fetch with an opaque CORS error.
       CORS_ORIGINS: http://localhost:5173
+      # Must match the timezone the BROWSER is in, and is not optional.
+      # `date` values are local-naive -- the browser's wall clock (spec §1) --
+      # and the future-date check in utils.local_now_date() compares them
+      # against the container's own clock. Debian defaults to UTC, so leaving
+      # this unset puts the two 8 hours apart and every POST /api/records for a
+      # measurement taken in the last 8 hours comes back 422 "not in the
+      # future". tzdata already ships in python:3.13-slim, so this needs no
+      # Dockerfile change; verify with `docker compose exec api date`.
+      TZ: Asia/Taipei
     volumes:
       # The DB file lives in a NAMED volume, deliberately not a bind mount:
       # bind-mounted SQLite on Windows/WSL hits file-locking problems that

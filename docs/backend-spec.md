@@ -1,6 +1,6 @@
 # Backend Spec — FastAPI + SQLite
 
-**Status: M1 skeleton built and verified against this spec (2026-08-05).** The four decisions in §6 were answered on 2026-08-04, §2–§5 were rewritten against them, and the `backend/` service now implements all of it — schema, CRUD, settings, and both import entry points. Verified end-to-end in the container on 2026-08-05: the image builds, `docker compose up --wait` reports healthy, `GET /api/health` returns 200, the §3.6 envelope was checked against the 404 / 400 / 422 paths, and the CLI importer's `--dry-run` ran inside the container against a real export file (including a deliberately planted same-minute collision, which it caught). Both databases are still empty apart from `schema_version` — no data has been migrated yet. That pass also turned up one blocking defect: see "Known defect: the container clock is UTC" in §3.2. This is the M1 target (see [CLAUDE.md](../CLAUDE.md) working rules). M2 is wiring the existing React frontend to it; nothing here changes any file under `src/`.
+**Status: M1 skeleton built and verified against this spec (2026-08-05).** The four decisions in §6 were answered on 2026-08-04, §2–§5 were rewritten against them, and the `backend/` service now implements all of it — schema, CRUD, settings, and both import entry points. Verified end-to-end in the container on 2026-08-05: the image builds, `docker compose up --wait` reports healthy, `GET /api/health` returns 200, the §3.6 envelope was checked against the 404 / 400 / 422 paths, a full CRUD round trip ran over HTTP (201 + `Location`, 409 carrying the colliding row, `PATCH` clearing a field with an explicit `null`, the post-merge `muscle_mass <= weight` check, 204 then 404 on double delete), and the CLI importer's `--dry-run` ran inside the container against a real export file (including a deliberately planted same-minute collision, which it caught). Two invariants the DDL comments make the most noise about were confirmed rather than assumed: deleting the highest row and inserting again yields the *next* id, not the deleted one (`sqlite_sequence` holds the high-water mark), and a dry run leaves `records` at 0 with `sqlite_sequence` un-bumped. That pass also turned up one blocking defect — the container clock — now fixed; see §3.2. Both databases are still empty apart from `schema_version`: no data has been migrated yet. This is the M1 target (see [CLAUDE.md](../CLAUDE.md) working rules). M2 is wiring the existing React frontend to it; nothing here changes any file under `src/`.
 
 Goal: replace the browser-localStorage data layer with a real Python API + relational DB, without changing the domain model the frontend already speaks.
 
@@ -229,9 +229,9 @@ Request — `date` and `weight` required, everything else optional:
 
 Validation mirrors `validateRecordForm`: `weight` in (0, 500); percentages in [0, 100]; `muscle_mass` in (0, weight]; `date` must parse and **must not be in the future**. Failures return `422` (§3.6).
 
-#### Known defect: the container clock is UTC, so the future check rejects valid records
+#### The future check needs `TZ` set on the container — or it rejects valid records
 
-Found 2026-08-05, **not yet fixed** — it blocks M2 and nothing else.
+Found and fixed 2026-08-05. The fix is one line in `compose.yaml`: `TZ: Asia/Taipei`. Recorded here because the symptom points nowhere near the cause, and because anything else that runs this image (a prod compose file, CI, a second machine in another timezone) has to set it too.
 
 `date` is local-naive: it is whatever wall clock the *browser* is on (UTC+8 here). The future check in `utils.local_now_date()` compares it against `datetime.now()`, which is whatever wall clock the *server* is on. Those are the same thing when uvicorn runs on the host — which is why this passed local testing — and eight hours apart inside the container, where `TZ` is unset and Debian defaults to UTC.
 
@@ -239,7 +239,9 @@ Measured: container `datetime.now()` = `2026-08-05T06:14` while the host was at 
 
 The CLI importer is unaffected: it calls `normalize_date`, never `is_valid_date`, so the migration path (§4.1) is safe and the dry-run reports stayed green throughout.
 
-Note the timezone comment in `utils.py:36` is what encoded the wrong assumption — it says reading the server's timezone is "correct for the localhost single-user setup M1 targets", which holds for bare uvicorn but not for the container that same spec section prescribes.
+Note the timezone comment in `utils.py:36` is what encoded the wrong assumption — it says reading the server's timezone is "correct for the localhost single-user setup M1 targets", which holds for bare uvicorn but not for the container that same spec section prescribes. `TZ` makes the comment true rather than making it obsolete: the code still reads the server's timezone, the server is just told which one it is.
+
+`tzdata` already ships in `python:3.13-slim`, so no Dockerfile change is needed. Verify with `docker compose exec api date` — if it prints UTC, `TZ` did not take, and the failure is silent.
 
 Duplicate handling: `date` is UNIQUE (§2), so a create at an existing `date` returns `409 Conflict` with the existing record — regardless of weight — rather than silently creating a near-twin. Catch the `IntegrityError` and translate it; don't pre-check with a `SELECT`, which would race.
 
@@ -303,6 +305,8 @@ docker compose run --rm api python -m app.scripts.import_json /data/import/body-
 Flags: `--strategy skip|overwrite` (default `skip`) · `--dry-run` (report only, no writes).
 
 **Run this from PowerShell, not Git Bash.** Git Bash (MSYS2) rewrites any argument that looks like a Unix absolute path into a Windows one, so `/data/import/foo.json` reaches the container as `C:/Program Files/Git/data/import/foo.json` and the script exits 2 with `error: no such file`. The path never gets mangled on the way in — it is mangled before `docker` is even invoked, which is why the mount looks fine when you go and check it. Three workarounds if you are already in Git Bash: prefix `MSYS_NO_PATHCONV=1`, double the leading slash (`//data/import/...`), or pass it relative to the image's `WORKDIR=/app` (`../data/import/...`). All four routes were verified to produce identical reports.
+
+Do not carry the `MSYS_NO_PATHCONV=1` prefix into PowerShell — an inline `VAR=value command` prefix is bash syntax, and PowerShell parses it as a command name (`The term 'MSYS_NO_PATHCONV=1' is not recognized`). PowerShell needs no workaround at all; if it ever needs an env var, the form is `$env:VAR = 'value'` on its own statement.
 
 `--dry-run` is not optional politeness here — run it first. With `date` now UNIQUE (§2) it is what tells you whether the export file contains same-minute collisions before you commit to the migration. Its report should separate the two kinds of duplicate, because they mean different things and only one of them is suspicious:
 
