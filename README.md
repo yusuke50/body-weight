@@ -1,4 +1,4 @@
-# Body Weight Tracker
+# Body Weight Tracker v0.2
 
 A web-based body weight tracking application that helps you record and visualize changes in your body metrics.
 
